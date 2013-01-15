@@ -352,6 +352,34 @@ def keepLastValue(requestContext, seriesList):
       series[i] = value
   return seriesList
 
+def keepSomeLastValues(requestContext, seriesList, maxToKeep):
+  """
+  Takes one metric or a wildcard seriesList.
+  Continues the line with the last received value when gaps ('None' values) appear in your data, rather than breaking your line. Will stop covering gaps after `maxToKeep` missing values.
+
+  Example:
+
+  .. code-block:: none
+
+    &target=keepSomeLastValues(Server01.connections.handled)
+
+  """
+  for series in seriesList:
+    series.name = "keepSomeLastValues(%s)" % (series.name)
+    series.pathExpression = series.name
+    lastGood = 0
+    for i,value in enumerate(series):
+      if value is None and i != 0:
+        if i - maxToKeep < lastGood:
+          value = series[i-1]
+        else:
+          for j in range(lastGood + 1, i):
+            series[j] = None
+      else:
+        lastGood = i
+      series[i] = value
+  return seriesList
+
 def asPercent(requestContext, seriesList, total=None):
   """
 
@@ -725,6 +753,41 @@ def nonNegativeDerivative(requestContext, seriesList, maxValue=None):
       prev = val
 
     newName = "nonNegativeDerivative(%s)" % series.name
+    newSeries = TimeSeries(newName, series.start, series.end, series.step, newValues)
+    newSeries.pathExpression = newName
+    results.append(newSeries)
+
+  return results
+
+def scaledNonNegativeDerivative(requestContext, seriesList, interval, maxValue=None):
+  """Scale a non-negative derivative to get per-interval values regardless of
+  the underlying aggregation schema.
+  """
+  results = []
+
+  for series in seriesList:
+    newValues = []
+    prev = None
+
+    factor = parseTimeOffset(interval).seconds / float(series.step)
+
+    for val in series:
+      if None in (prev, val):
+        newValues.append(None)
+        prev = val
+        continue
+
+      diff = val - prev
+      if diff >= 0:
+        newValues.append(diff * factor)
+      elif maxValue is not None and maxValue >= val:
+        newValues.append( ((maxValue - prev) + val  + 1) * factor )
+      else:
+        newValues.append(None)
+
+      prev = val
+
+    newName = "scaledNonNegativeDerivative(%s)" % series.name
     newSeries = TimeSeries(newName, series.start, series.end, series.step, newValues)
     newSeries.pathExpression = newName
     results.append(newSeries)
@@ -1882,7 +1945,7 @@ def constantLine(requestContext, value):
   """
   start = timestamp( requestContext['startTime'] )
   end = timestamp( requestContext['endTime'] )
-  step = (end - start) / 2.0
+  step = (end - start) / 1.0
   series = TimeSeries(str(value), start, end, step, [value, value])
   return [series]
 
@@ -2418,6 +2481,7 @@ SeriesFunctions = {
   'maxSeries' : maxSeries,
   'rangeOfSeries': rangeOfSeries,
 
+  'scaledNonNegativeDerivative' : scaledNonNegativeDerivative,
   # Transform functions
   'scale' : scale,
   'scaleToSeconds' : scaleToSeconds,
@@ -2484,6 +2548,7 @@ SeriesFunctions = {
   'alpha' : alpha,
   'cumulative' : cumulative,
   'keepLastValue' : keepLastValue,
+  'keepSomeLastValues' : keepSomeLastValues,
   'drawAsInfinite' : drawAsInfinite,
   'secondYAxis': secondYAxis,
   'lineWidth' : lineWidth,
