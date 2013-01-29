@@ -247,6 +247,8 @@ def averageSeries(requestContext, *seriesLists):
     &target=averageSeries(company.server.*.threads.busy)
 
   """
+  if not any(seriesLists):
+    return []
   (seriesList,start,end,step) = normalize(seriesLists)
   #name = "averageSeries(%s)" % ','.join((s.name for s in seriesList))
   name = "averageSeries(%s)" % ','.join(set([s.pathExpression for s in seriesList]))
