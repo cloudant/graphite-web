@@ -1348,7 +1348,7 @@ def nPercentile(requestContext, seriesList, n):
 
     perc_val = _getPercentile(s_copy, n)
     if perc_val:
-      name = 'nPercentile(%s, %.1f)' % (n, s_copy.name, perc_val)
+      name = 'nPercentile(%.1f, %s)' % (n, s_copy.name)
       perc_series = TimeSeries(name, s_copy.start, s_copy.end, s_copy.step, [perc_val] )
       perc_series.pathExpression = name
       results.append(perc_series)
