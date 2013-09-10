@@ -50,9 +50,9 @@ pathExpression = Combine(
   Combine(
     ZeroOrMore(
       Group(
-        Literal('{') +
+        Literal('{') + Optional(Literal('{')) +
         Word(validMetricChars + ',') +
-        Literal('}') + Optional( Word(validMetricChars) )
+        Literal('}')  + Optional(Literal('}')) + Optional( Word(validMetricChars) )
       )
     )
   )

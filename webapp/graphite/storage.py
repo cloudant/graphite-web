@@ -135,7 +135,7 @@ def find(root_dir, pattern):
   "Generates nodes beneath root_dir matching the given pattern"
   clean_pattern = pattern.replace('\\', '')
   pattern_parts = clean_pattern.split('.')
-
+  
   for absolute_path in _find(root_dir, pattern_parts):
 
     if DATASOURCE_DELIMETER in basename(absolute_path):
@@ -226,6 +226,12 @@ def match_entries(entries, pattern):
   v1, v2 = pattern.find('{'), pattern.find('}')
 
   if v1 > -1 and v2 > v1:
+    negative = False
+    if pattern[v1+1]  == '{' and pattern[v2+1] == '}':
+      negative = True
+      pattern = pattern[:v1] + pattern[v1+1:v2] + pattern[v2+1:]
+      v2 -= 1
+
     variations = pattern[v1+1:v2].split(',')
     variants = [ pattern[:v1] + v + pattern[v2+1:] for v in variations ]
     matching = []
@@ -233,7 +239,11 @@ def match_entries(entries, pattern):
     for variant in variants:
       matching.extend( fnmatch.filter(entries, variant) )
 
-    return list( _deduplicate(matching) ) #remove dupes without changing order
+    matches = list( _deduplicate(matching) ) #remove dupes without changing order
+    if negative:
+      matches = [e for e in entries if e not in matches]
+
+    return matches
 
   else:
     matching = fnmatch.filter(entries, pattern)
