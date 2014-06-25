@@ -735,18 +735,27 @@ def nonNegativeDerivative(requestContext, seriesList, maxValue=None):
   results = []
 
   for series in seriesList:
-    newValues = []
-    prev = None
+    newValues = [None]
+    prev = series[0]
+    inGap = False
 
-    for val in series:
+    for val in series[1:]:
       if None in (prev, val):
+        inGap = True
         newValues.append(None)
         prev = val
         continue
 
       diff = val - prev
       if diff >= 0:
-        newValues.append(diff)
+        if inGap:
+          # If we're closing a gap, add one more None value
+          # This prevents "jumps" in metrics when the counter
+          # catches up with reality
+          inGap = False
+          newValues.append(None)
+        else:
+          newValues.append(diff)
       elif maxValue is not None and maxValue >= val:
         newValues.append( (maxValue - prev) + val  + 1 )
       else:
