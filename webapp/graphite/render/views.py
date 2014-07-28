@@ -128,7 +128,7 @@ def renderView(request):
       for series in data:
         timestamps = range(series.start, series.end, series.step)
         datapoints = zip(series, timestamps)
-        series_data.append( dict(target=series.name, datapoints=datapoints) )
+        series_data.append( dict(target=series.name, datapoints=datapoints, interval=series.step) )
 
       if 'jsonp' in requestOptions:
         response = HttpResponse(
