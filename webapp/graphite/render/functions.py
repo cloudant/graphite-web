@@ -751,7 +751,7 @@ def integral(requestContext, seriesList):
   return results
 
 
-def nonNegativeDerivative(requestContext, seriesList, maxValue=None):
+def nonNegativeDerivative(requestContext, seriesList, smoothing=0):
   """
   Same as the derivative function above, but ignores datapoints that trend
   down.  Useful for counters that increase for a long time, then wrap or
@@ -770,27 +770,25 @@ def nonNegativeDerivative(requestContext, seriesList, maxValue=None):
   for series in seriesList:
     newValues = [None]
     prev = series[0]
-    inGap = False
+    gapsToFill = 0
 
     for val in series[1:]:
       if None in (prev, val):
-        inGap = True
+        gapsToFill = smoothing
         newValues.append(None)
         prev = val
         continue
 
       diff = val - prev
       if diff >= 0:
-        if inGap:
+        if gapsToFill > 0:
           # If we're closing a gap, add one more None value
           # This prevents "jumps" in metrics when the counter
           # catches up with reality
-          inGap = False
+          gapsToFill -= 1
           newValues.append(None)
         else:
           newValues.append(diff)
-      elif maxValue is not None and maxValue >= val:
-        newValues.append( (maxValue - prev) + val  + 1 )
       else:
         newValues.append(None)
 
