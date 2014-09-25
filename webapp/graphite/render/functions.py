@@ -2563,6 +2563,7 @@ SeriesFunctions = {
   'minSeries' : minSeries,
   'maxSeries' : maxSeries,
   'rangeOfSeries': rangeOfSeries,
+  'stddevSeries': stddevSeries,
 
   'scaledNonNegativeDerivative' : scaledNonNegativeDerivative,
   # Transform functions
